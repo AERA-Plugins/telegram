@@ -74,26 +74,34 @@ class Worker {
   std::map<int64_t, std::string> users_;
   std::map<int64_t, std::string> chat_titles_;
 
-  void LoadClientConfiguration() {
-    int fd = open("/state/client.conf", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
-    if (fd < 0) return;
+  bool LoadClientConfigurationAt(const char *path, bool require_private) {
+    int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd < 0) return false;
     struct stat info{};
     char buffer[160]{};
     const ssize_t count = fstat(fd, &info) == 0 && S_ISREG(info.st_mode) &&
-        !(info.st_mode & 0077) && info.st_size > 0 && info.st_size < 160
+        (!require_private || !(info.st_mode & 0077)) &&
+        info.st_size > 0 && info.st_size < 160
         ? read(fd, buffer, sizeof(buffer) - 1) : -1;
     close(fd);
-    if (count <= 0) return;
+    if (count <= 0) return false;
     std::string content(buffer, static_cast<size_t>(count));
     const auto split = content.find('\n');
-    if (split == std::string::npos) return;
+    if (split == std::string::npos) return false;
     const long id = strtol(content.substr(0, split).c_str(), nullptr, 10);
     std::string hash = content.substr(split + 1);
     while (!hash.empty() && (hash.back() == '\n' || hash.back() == '\r')) hash.pop_back();
     if (id > 0 && id <= INT32_MAX && hash.size() >= 16 && hash.size() <= 64) {
       api_id_ = static_cast<int32_t>(id);
       api_hash_ = std::move(hash);
+      return true;
     }
+    return false;
+  }
+
+  void LoadClientConfiguration() {
+    if (!LoadClientConfigurationAt("/state/client.conf", true))
+      LoadClientConfigurationAt("/etc/aera-telegram/client.conf", false);
   }
 
   bool SaveClientConfiguration() {
