@@ -39,6 +39,9 @@ class Worker {
     td::ClientManager::execute(td_api::make_object<td_api::setLogVerbosityLevel>(0));
     manager_ = std::make_unique<td::ClientManager>();
     client_id_ = manager_->create_client_id();
+    // Creating a ClientManager ID is lazy. Kick the client actor so TDLib
+    // publishes its initial authorizationStateWaitTdlibParameters update.
+    Send(td_api::make_object<td_api::getOption>("version"));
     SendState(tg::AuthState::kStarting, "Starting secure Telegram session");
 
     while (!stopping_) {
