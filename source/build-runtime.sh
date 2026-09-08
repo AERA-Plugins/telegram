@@ -21,7 +21,7 @@ CCACHE_DISABLE=1 cmake -S "$script_dir" -B "$build_dir" -G Ninja \
 CCACHE_DISABLE=1 cmake --build "$build_dir" -j"$(nproc)"
 
 rm -rf "$output"
-mkdir -p "$output/usr/bin" "$output/lib" "$output/usr/lib" \
+mkdir -p "$output/usr/bin" "$output/lib" "$output/usr/lib" "$output/etc" \
   "$output/usr/share/licenses/tdlib" "$output/state"
 cp "$build_dir/aera-telegram" "$output/usr/bin/aera-telegram"
 cp "$sysroot/lib/ld-musl-aarch64.so.1" "$output/lib/"
@@ -35,6 +35,7 @@ ln -s libz.so.1.3.2 "$output/usr/lib/libz.so.1"
 ln -s ld-musl-aarch64.so.1 "$output/lib/libc.musl-aarch64.so.1"
 cp "$tdlib_source/LICENSE_1_0.txt" "$output/usr/share/licenses/tdlib/"
 touch "$output/state/.keep"
+touch "$output/etc/.keep"
 "$strip" --strip-unneeded "$output/usr/bin/aera-telegram"
 "$strip" --strip-unneeded "$output/usr/lib/libssl.so.3" \
   "$output/usr/lib/libcrypto.so.3" "$output/usr/lib/libstdc++.so.6.0.34" \
