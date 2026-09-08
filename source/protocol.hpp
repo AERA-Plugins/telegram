@@ -46,6 +46,7 @@ enum class AuthState : uint32_t {
   kConfirmElsewhere,
   kReady,
   kClosing,
+  kNeedVault,
 };
 
 struct Message {

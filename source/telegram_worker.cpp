@@ -16,6 +16,7 @@
 #include <poll.h>
 #include <string>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace tg = aera::telegram;
@@ -39,6 +40,7 @@ class Worker {
     td::ClientManager::execute(td_api::make_object<td_api::setLogVerbosityLevel>(0));
     manager_ = std::make_unique<td::ClientManager>();
     client_id_ = manager_->create_client_id();
+    LoadClientConfiguration();
     // Creating a ClientManager ID is lazy. Kick the client actor so TDLib
     // publishes its initial authorizationStateWaitTdlibParameters update.
     Send(td_api::make_object<td_api::getOption>("version"));
@@ -71,6 +73,40 @@ class Worker {
   std::map<uint64_t, std::function<void(Object)>> handlers_;
   std::map<int64_t, std::string> users_;
   std::map<int64_t, std::string> chat_titles_;
+
+  void LoadClientConfiguration() {
+    int fd = open("/state/client.conf", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd < 0) return;
+    struct stat info{};
+    char buffer[160]{};
+    const ssize_t count = fstat(fd, &info) == 0 && S_ISREG(info.st_mode) &&
+        !(info.st_mode & 0077) && info.st_size > 0 && info.st_size < 160
+        ? read(fd, buffer, sizeof(buffer) - 1) : -1;
+    close(fd);
+    if (count <= 0) return;
+    std::string content(buffer, static_cast<size_t>(count));
+    const auto split = content.find('\n');
+    if (split == std::string::npos) return;
+    const long id = strtol(content.substr(0, split).c_str(), nullptr, 10);
+    std::string hash = content.substr(split + 1);
+    while (!hash.empty() && (hash.back() == '\n' || hash.back() == '\r')) hash.pop_back();
+    if (id > 0 && id <= INT32_MAX && hash.size() >= 16 && hash.size() <= 64) {
+      api_id_ = static_cast<int32_t>(id);
+      api_hash_ = std::move(hash);
+    }
+  }
+
+  bool SaveClientConfiguration() {
+    const std::string content = std::to_string(api_id_) + "\n" + api_hash_ + "\n";
+    int fd = open("/state/client.conf",
+                  O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NOFOLLOW, 0600);
+    if (fd < 0) return false;
+    const bool ok = fchmod(fd, 0600) == 0 &&
+        write(fd, content.data(), content.size()) ==
+            static_cast<ssize_t>(content.size()) && fsync(fd) == 0;
+    close(fd);
+    return ok;
+  }
 
   static void Copy(char (&output)[tg::kTextBytes], const std::string &text) {
     const size_t count = std::min(text.size(), sizeof(output) - 1);
@@ -182,11 +218,19 @@ class Worker {
   void Handle(const tg::Message &message) {
     switch (message.kind) {
       case tg::Kind::kConfigure:
-        api_id_ = static_cast<int32_t>(message.primary);
-        api_hash_ = message.text;
-        if (const auto split = api_hash_.find('\n'); split != std::string::npos) {
-          database_key_ = api_hash_.substr(split + 1);
-          api_hash_.resize(split);
+        if (message.primary > 0) {
+          api_id_ = static_cast<int32_t>(message.primary);
+          api_hash_ = message.text;
+          if (const auto split = api_hash_.find('\n'); split != std::string::npos) {
+            database_key_ = api_hash_.substr(split + 1);
+            api_hash_.resize(split);
+          }
+          if (!SaveClientConfiguration()) {
+            Error("AERA could not save the private client configuration");
+            break;
+          }
+        } else {
+          database_key_ = message.text;
         }
         break;
       case tg::Kind::kPhone:
@@ -291,8 +335,12 @@ class Worker {
         td_api::downcast_call(state, Overloaded(
           [this](td_api::authorizationStateWaitTdlibParameters &) {
             waiting_parameters_ = true;
-            SendState(tg::AuthState::kNeedConfiguration,
-                      "Enter your Telegram API credentials and an AERA vault password");
+            if (api_id_ > 0 && !api_hash_.empty())
+              SendState(tg::AuthState::kNeedVault,
+                        "Unlock the encrypted AERA Telegram session");
+            else
+              SendState(tg::AuthState::kNeedConfiguration,
+                        "One-time Telegram client registration");
             ConfigureIfReady();
           },
           [this](td_api::authorizationStateWaitPhoneNumber &) { SendState(tg::AuthState::kNeedPhone, "Enter your phone number with country code"); },
