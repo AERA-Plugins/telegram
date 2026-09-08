@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <vector>
 
 namespace tg = aera::telegram;
 namespace td_api = td::td_api;
@@ -73,6 +74,8 @@ class Worker {
   std::map<uint64_t, std::function<void(Object)>> handlers_;
   std::map<int64_t, std::string> users_;
   std::map<int64_t, std::string> chat_titles_;
+  std::map<int64_t, std::string> chat_previews_;
+  std::map<int64_t, uint32_t> chat_unread_;
 
   bool LoadClientConfigurationAt(const char *path, bool require_private) {
     int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
@@ -179,6 +182,46 @@ class Worker {
     }
   }
 
+  using History = std::vector<td_api::object_ptr<td_api::message>>;
+
+  void FinishHistory(const std::shared_ptr<History> &history) {
+    for (auto it = history->rbegin(); it != history->rend(); ++it)
+      if (*it) EmitMessage(**it);
+    Emit(tg::Kind::kMessagesDone, static_cast<uint32_t>(history->size()));
+  }
+
+  void LoadHistoryPage(int64_t chat_id, int64_t from_message_id,
+                       unsigned pages_left,
+                       const std::shared_ptr<History> &history) {
+    Send(td_api::make_object<td_api::getChatHistory>(
+             chat_id, from_message_id, 0, 100, false),
+         [this, chat_id, from_message_id, pages_left, history](Object object) {
+      if (!object || object->get_id() == td_api::error::ID) {
+        if (history->empty()) Error("Could not load this conversation");
+        else FinishHistory(history);
+        return;
+      }
+      auto page = td::move_tl_object_as<td_api::messages>(object);
+      int64_t oldest = 0;
+      size_t added = 0;
+      for (auto &entry : page->messages_) {
+        if (!entry || entry->id_ == from_message_id) continue;
+        oldest = entry->id_;
+        history->push_back(std::move(entry));
+        ++added;
+        if (history->size() >= 200) break;
+      }
+      // TDLib may intentionally return fewer than requested while bringing
+      // remote history into its local database. Continue from the oldest ID,
+      // as required by the TDLib pagination contract.
+      if (pages_left > 1 && added && oldest && history->size() < 200) {
+        LoadHistoryPage(chat_id, oldest, pages_left - 1, history);
+        return;
+      }
+      FinishHistory(history);
+    });
+  }
+
   std::string Sender(const td_api::message &message) const {
     if (!message.sender_id_) return "Unknown";
     if (message.sender_id_->get_id() == td_api::messageSenderUser::ID) {
@@ -273,24 +316,23 @@ class Worker {
           auto chats = td::move_tl_object_as<td_api::chats>(object);
           for (const int64_t id : chats->chat_ids_) {
             const auto it = chat_titles_.find(id);
-            Emit(tg::Kind::kChat, 0, id, 0,
-                 it == chat_titles_.end() ? "Telegram chat" : it->second);
+            const auto preview = chat_previews_.find(id);
+            const auto unread = chat_unread_.find(id);
+            std::string payload =
+                it == chat_titles_.end() ? "Telegram chat" : it->second;
+            payload += "\n";
+            payload += preview == chat_previews_.end()
+                ? "No recent message" : preview->second;
+            Emit(tg::Kind::kChat,
+                 unread == chat_unread_.end() ? 0 : unread->second,
+                 id, 0, payload);
           }
           Emit(tg::Kind::kChatsDone);
         });
         break;
       case tg::Kind::kOpenChat: {
         const int64_t chat_id = message.primary;
-        Send(td_api::make_object<td_api::getChatHistory>(chat_id, 0, 0, 50, false),
-             [this](Object object) {
-          if (!object || object->get_id() == td_api::error::ID) {
-            Error("Could not load this conversation"); return;
-          }
-          auto history = td::move_tl_object_as<td_api::messages>(object);
-          for (auto it = history->messages_.rbegin(); it != history->messages_.rend(); ++it)
-            if (*it) EmitMessage(**it);
-          Emit(tg::Kind::kMessagesDone);
-        });
+        LoadHistoryPage(chat_id, 0, 4, std::make_shared<History>());
         break;
       }
       case tg::Kind::kSendText: {
@@ -301,6 +343,32 @@ class Worker {
         request->input_message_content_ = std::move(content);
         Send(std::move(request), [this](Object object) {
           if (!object || object->get_id() == td_api::error::ID) Error("Message could not be sent");
+        });
+        break;
+      }
+      case tg::Kind::kSendFile: {
+        const std::string path = message.text;
+        struct stat info{};
+        if (path.compare(0, 8, "/sdcard/") != 0 ||
+            path.find("/../") != std::string::npos ||
+            lstat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode)) {
+          Error("The selected attachment is not a readable /sdcard file");
+          break;
+        }
+        auto request = td_api::make_object<td_api::sendMessage>();
+        request->chat_id_ = message.primary;
+        auto document = td_api::make_object<td_api::inputDocument>(
+            td_api::make_object<td_api::inputFileLocal>(path), nullptr, false);
+        auto caption = td_api::make_object<td_api::formattedText>(
+            "", td_api::array<td_api::object_ptr<td_api::textEntity>>{});
+        request->input_message_content_ =
+            td_api::make_object<td_api::inputMessageDocument>(
+                std::move(document), std::move(caption));
+        Send(std::move(request), [this](Object object) {
+          if (!object || object->get_id() == td_api::error::ID)
+            Error("Attachment could not be sent");
+          else
+            Emit(tg::Kind::kStatus, 0, 0, 0, "Attachment queued for upload");
         });
         break;
       }
@@ -375,10 +443,19 @@ class Worker {
         users_[update.user_->id_] = name.empty() ? "Telegram user" : name;
       },
       [this](td_api::updateNewChat &update) {
-        if (update.chat_) chat_titles_[update.chat_->id_] = update.chat_->title_;
+        if (!update.chat_) return;
+        chat_titles_[update.chat_->id_] = update.chat_->title_;
+        chat_unread_[update.chat_->id_] =
+            static_cast<uint32_t>(std::max(0, update.chat_->unread_count_));
+        if (update.chat_->last_message_)
+          chat_previews_[update.chat_->id_] = Text(*update.chat_->last_message_);
       },
       [this](td_api::updateChatTitle &update) { chat_titles_[update.chat_id_] = update.title_; },
-      [this](td_api::updateNewMessage &update) { if (update.message_) EmitMessage(*update.message_); },
+      [this](td_api::updateNewMessage &update) {
+        if (!update.message_) return;
+        chat_previews_[update.message_->chat_id_] = Text(*update.message_);
+        EmitMessage(*update.message_);
+      },
       [](auto &) {}
     ));
   }

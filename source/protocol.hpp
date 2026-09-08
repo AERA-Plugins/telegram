@@ -23,6 +23,9 @@ enum class Kind : uint32_t {
   kOpenChat,
   kSendText,
   kClose,
+  // Additive Host API 1 extension. kClose deliberately keeps its original
+  // numeric value so older runtimes continue to close safely.
+  kSendFile,
 
   // Isolated worker -> trusted UI.
   kState = 64,
@@ -77,7 +80,7 @@ inline bool Valid(const Message &message, bool from_worker) {
            message.kind == Kind::kMessage ||
            message.kind == Kind::kMessagesDone;
   }
-  return message.kind >= Kind::kConfigure && message.kind <= Kind::kClose;
+  return message.kind >= Kind::kConfigure && message.kind <= Kind::kSendFile;
 }
 
 }  // namespace aera::telegram

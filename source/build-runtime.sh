@@ -24,7 +24,7 @@ CCACHE_DISABLE=1 cmake --build "$build_dir" -j"$(nproc)"
 rm -rf "$output"
 mkdir -p "$output/usr/bin" "$output/lib" "$output/usr/lib" \
   "$output/etc/aera-telegram" \
-  "$output/usr/share/licenses/tdlib" "$output/state"
+  "$output/usr/share/licenses/tdlib" "$output/state" "$output/sdcard"
 cp "$build_dir/aera-telegram" "$output/usr/bin/aera-telegram"
 cp "$sysroot/lib/ld-musl-aarch64.so.1" "$output/lib/"
 cp "$sysroot/usr/lib/libssl.so.3" "$output/usr/lib/"
@@ -43,7 +43,7 @@ api_hash=$(sed -n '2p' "$client_config")
 printf '%s\n%s\n' "$api_id" "$api_hash" > \
   "$output/etc/aera-telegram/client.conf"
 chmod 0444 "$output/etc/aera-telegram/client.conf"
-touch "$output/state/.keep"
+touch "$output/state/.keep" "$output/sdcard/.keep"
 "$strip" --strip-unneeded "$output/usr/bin/aera-telegram"
 "$strip" --strip-unneeded "$output/usr/lib/libssl.so.3" \
   "$output/usr/lib/libcrypto.so.3" "$output/usr/lib/libstdc++.so.6.0.34" \
