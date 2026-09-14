@@ -2,17 +2,147 @@
   "schema": 1,
   "id": "telegram",
   "name": "AERA Telegram",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Full-screen recovery Telegram with encrypted sessions, paginated history, chat previews, messaging, and read-only file attachments.",
   "type": "app-runtime",
   "entry": "telegram",
   "min_host_api": 1,
   "payload": "runtime.xz",
-  "payload_url": "https://github.com/AERA-Plugins/telegram/releases/download/v1.1.0/runtime.xz",
+  "payload_url": "https://github.com/AERA-Plugins/telegram/releases/download/v1.2.0/runtime.xz",
   "payload_size": 7193296,
   "payload_sha256": "bf468db646b0c9ce2d67f20a2d4e0c0f18d23832a5d5c7491397fa8217266e0c",
   "expanded_size": 35286986,
   "expanded_sha256": "c12ecc8214e78ee92a667b7bcaafb2b1e537de5b6e34d25c9cb8bf0430309126",
   "member_count": 14,
-  "permissions": ["network", "encrypted-private-storage", "read-shared-storage"]
+  "permissions": [
+    "network",
+    "encrypted-private-storage",
+    "read-shared-storage"
+  ],
+  "localizations": {
+    "ar_SA": {
+      "name": "AERA Telegram",
+      "description": "الاسترداد بملء الشاشة Telegram مع الجلسات المشفرة، والسجل المجزأ، ومعاينات الدردشة، والمراسلة، ومرفقات الملفات للقراءة فقط."
+    },
+    "bg_BG": {
+      "name": "AERA Telegram",
+      "description": "Възстановяване на цял екран Telegram с криптирани сесии, странична история, визуализации на чата, съобщения и прикачени файлове само за четене."
+    },
+    "bn_BD": {
+      "name": "AERA Telegram",
+      "description": "এনক্রিপ্ট করা সেশনে সম্পূর্ণ-স্ক্রীন পুনরুদ্ধার Telegram, পৃষ্ঠাবদ্ধ ইতিহাস, চ্যাট প্রিভিউ, মেসেজিং এবং শুধুমাত্র-পঠন ফাইল সংযুক্তি সহ।"
+    },
+    "ca_ES": {
+      "name": "AERA Telegram",
+      "description": "Recuperació a pantalla completa Telegram sessions xifrades, historial paginat, previsualitzacions de xat, missatgeria i fitxers adjunts de només lectura."
+    },
+    "cs_CZ": {
+      "name": "AERA Telegram",
+      "description": "Obnova na celou obrazovku Telegram se šifrovanými relacemi, stránkovanou historií, náhledy chatu, zasíláním zpráv a soubory pouze pro čtení."
+    },
+    "de_DE": {
+      "name": "AERA Telegram",
+      "description": "Vollbild-Wiederherstellung Telegram mit verschlüsselten Sitzungen, paginierter Historie, Chat-Vorschauen, Messaging und schreibgeschützten Dateianhängen."
+    },
+    "el_GR": {
+      "name": "AERA Telegram",
+      "description": "Ανάκτηση πλήρους οθόνης Telegram με κρυπτογραφημένες συνεδρίες, ιστορικό με σελίδες, προεπισκοπήσεις συνομιλιών, μηνύματα και συνημμένα αρχεία μόνο για ανάγνωση."
+    },
+    "es-ES": {
+      "name": "AERA Telegram",
+      "description": "Recuperación en pantalla completa Telegram con sesiones encriptadas, historial paginado, vistas previas de chat, mensajería y archivos adjuntos de solo lectura."
+    },
+    "fa_IR": {
+      "name": "AERA Telegram",
+      "description": "بازیابی تمام‌صفحه Telegram با جلسات رمزگذاری‌شده، تاریخچه صفحه‌بندی‌شده، پیش‌نمایش چت، پیام‌رسانی و پیوست‌های فایل فقط خواندنی."
+    },
+    "fr_FR": {
+      "name": "AERA Telegram",
+      "description": "Récupération en plein écran Telegram avec sessions chiffrées, historique paginé, aperçus de chat, messagerie et pièces jointes en lecture seule."
+    },
+    "he_IL": {
+      "name": "AERA Telegram",
+      "description": "שחזור במסך מלא Telegram עם סשנים מוצפנים, היסטוריה מפולחת, תצוגות צ'אט, הודעות, וקבצים מצורפים לקריאה בלבד."
+    },
+    "hi_IN": {
+      "name": "AERA Telegram",
+      "description": "पूर्ण-स्क्रीन रिकवरी Telegram एन्क्रिप्टेड सत्रों, पेज़ की गई हिस्ट्री, चैट प्रिव्यूज़, मैसेजिंग और केवल-पढ़ने योग्य फ़ाइल अटैचमेंट्स के साथ।"
+    },
+    "hu": {
+      "name": "AERA Telegram",
+      "description": "Teljes képernyős helyreállítás Telegram titkosított munkamenetekkel, oldalszámozott előzményekkel, csevegés-előnézetekkel, üzenetküldéssel és csak olvasható fájlcsatolmányokkal."
+    },
+    "id_ID": {
+      "name": "AERA Telegram",
+      "description": "Pemulihan layar penuh Telegram dengan sesi terenkripsi, riwayat berpaging, pratinjau obrolan, pengiriman pesan, dan lampiran file hanya-baca."
+    },
+    "it_IT": {
+      "name": "AERA Telegram",
+      "description": "Recupero a schermo intero Telegram con sessioni criptate, cronologia impaginata, anteprime chat, messaggistica e allegati file in sola lettura."
+    },
+    "ja_JP": {
+      "name": "AERA Telegram",
+      "description": "フルスクリーンリカバリー Telegram 暗号化セッション、ページ分割された履歴、チャットプレビュー、メッセージング、読み取り専用のファイル添付付き。"
+    },
+    "ko_KR": {
+      "name": "AERA Telegram",
+      "description": "암호화된 세션, 페이지별 기록, 채팅 미리보기, 메시징 및 읽기 전용 파일 첨부와 함께 전체 화면 복구 Telegram."
+    },
+    "nl_NL": {
+      "name": "AERA Telegram",
+      "description": "Volledig scherm herstel Telegram met versleutelde sessies, gepagineerde geschiedenis, chatvoorbeelden, berichten en alleen-lezen bijlagen."
+    },
+    "no_NO": {
+      "name": "AERA Telegram",
+      "description": "Fullskjermgjenoppretting Telegram med krypterte økter, paginert historikk, chat-forhåndsvisning, meldinger og skrivebeskyttede filvedlegg."
+    },
+    "pl_PL": {
+      "name": "AERA Telegram",
+      "description": "Pełnoekranowe odzyskiwanie Telegram z szyfrowanymi sesjami, podzieloną historią, podglądem czatu, wiadomościami i załącznikami plików tylko do odczytu."
+    },
+    "pt_BR": {
+      "name": "AERA Telegram",
+      "description": "Recuperação em tela cheia Telegram com sessões criptografadas, histórico paginado, pré-visualizações de chat, mensagens e anexos de arquivos somente leitura."
+    },
+    "pt_PT": {
+      "name": "AERA Telegram",
+      "description": "Recuperação em ecrã completo Telegram com sessões encriptadas, histórico paginado, pré-visualizações de chat, mensagens e anexos de ficheiros apenas leitura."
+    },
+    "ro_RO": {
+      "name": "AERA Telegram",
+      "description": "Recuperare pe ecran complet Telegram cu sesiuni criptate, istoric paginat, previzualizări de chat, mesagerie și atașamente de fișiere doar pentru citire."
+    },
+    "ru": {
+      "name": "AERA Telegram",
+      "description": "Полноэкранное восстановление Telegram с зашифрованными сессиями, постраничной историей, предварительным просмотром чатов, обменом сообщениями и файлами только для чтения."
+    },
+    "sr_Cyrl": {
+      "name": "AERA Telegram",
+      "description": "Потпуни опоравак на целом екрану Telegram са шифрованим сесијама, пагинираном историјом, прегледима ћаскања, разменом порука и прилозима датотека у режиму само за читање."
+    },
+    "th_TH": {
+      "name": "AERA Telegram",
+      "description": "กู้คืนเต็มหน้าจอ Telegram พร้อมเซสชันเข้ารหัส ประวัติแบ่งหน้า ตัวอย่างแชท การส่งข้อความ และไฟล์แนบอ่านได้อย่างเดียว"
+    },
+    "tr_TR": {
+      "name": "AERA Telegram",
+      "description": "Şifreli oturumlar, sayfalı geçmiş, sohbet önizlemeleri, mesajlaşma ve salt okunur dosya ekleri ile tam ekran kurtarma Telegram."
+    },
+    "uk_UA": {
+      "name": "AERA Telegram",
+      "description": "Повне відновлення на весь екран Telegram з зашифрованими сесіями, пагінованою історією, попереднім переглядом чатів, обміном повідомленнями та вкладеннями файлів лише для читання."
+    },
+    "vi_VN": {
+      "name": "AERA Telegram",
+      "description": "Phục hồi toàn màn hình Telegram với các phiên mã hóa, lịch sử phân trang, xem trước trò chuyện, nhắn tin và tập tin đính kèm chỉ đọc."
+    },
+    "zh_CN": {
+      "name": "AERA Telegram",
+      "description": "全屏恢复 Telegram，具有加密会话、分页历史记录、聊天预览、消息传递和只读文件附件。"
+    },
+    "zh_TW": {
+      "name": "AERA Telegram",
+      "description": "全螢幕恢復 Telegram，支持加密會話、分頁歷史記錄、聊天預覽、訊息傳送及唯讀檔案附件。"
+    }
+  }
 }
