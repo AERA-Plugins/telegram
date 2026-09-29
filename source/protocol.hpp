@@ -26,6 +26,9 @@ enum class Kind : uint32_t {
   // Additive Host API 1 extension. kClose deliberately keeps its original
   // numeric value so older runtimes continue to close safely.
   kSendFile,
+  kDownloadFile,
+  kEditMessage,
+  kDeleteMessage,
 
   // Isolated worker -> trusted UI.
   kState = 64,
@@ -35,6 +38,13 @@ enum class Kind : uint32_t {
   kChatsDone,
   kMessage,
   kMessagesDone,
+  kAttachment,
+  kFileProgress,
+  kFileReady,
+  kPhotoReady,
+  kAvatarReady,
+  kMessageStatus,
+  kMessageDeleted,
 };
 
 enum class AuthState : uint32_t {
@@ -74,13 +84,10 @@ inline bool Valid(const Message &message, bool from_worker) {
     return false;
   }
   if (from_worker) {
-    return message.kind == Kind::kState || message.kind == Kind::kStatus ||
-           message.kind == Kind::kError || message.kind == Kind::kChat ||
-           message.kind == Kind::kChatsDone ||
-           message.kind == Kind::kMessage ||
-           message.kind == Kind::kMessagesDone;
+    return message.kind >= Kind::kState &&
+        message.kind <= Kind::kMessageDeleted;
   }
-  return message.kind >= Kind::kConfigure && message.kind <= Kind::kSendFile;
+  return message.kind >= Kind::kConfigure && message.kind <= Kind::kDeleteMessage;
 }
 
 }  // namespace aera::telegram
