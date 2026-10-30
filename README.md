@@ -13,7 +13,7 @@ read-only views of mounted shared storage, and the narrow writable
 The TDLib database encryption key is entered in the trusted recovery UI and is
 never logged or stored as plaintext by the AERA host.
 
-Version 1.3.4 supports phone/code/two-step login, email verification,
+Version 1.3.5 supports phone/code/two-step login, email verification,
 registration, chat listing and history, text and file sending, attachment
 downloads with confirmation and progress, Telegram profile photos, and inline
 photo previews with a dedicated viewer. Selected pictures are sent as native
@@ -47,3 +47,19 @@ python3 source/pack.py stage build
 Update `plugin.json` from `build/metadata.json`, sign the exact bytes with the
 AERA Ed25519 release key, and attach `runtime.xz` to the matching GitHub release.
 Never commit the private signing key.
+
+## Local session password
+
+On recoveries with local session management, open the chat menu or choose
+Change vault password on the unlock screen. The current password is required
+before a new password can be selected. The worker uses TDLib's database key
+change API and reports success only after TDLib has completed the operation.
+
+The recovery can also reset local session data after swipe confirmation.
+This requires signing in again and removes local secret chats and caches,
+while leaving the Telegram account, cloud chats and shared downloads intact.
+
+The protocol remains version 1. The worker advertises password-change support
+in an existing state packet field ignored by older recoveries. New response
+kinds are sent only after an explicit password-change request from a capable
+host. Older recoveries retain their existing interface and behavior.

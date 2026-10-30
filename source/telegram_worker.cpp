@@ -73,6 +73,7 @@ class Worker {
   bool stopping_ = false;
   bool authorized_ = false;
   bool waiting_parameters_ = false;
+  bool changing_vault_password_ = false;
   int32_t api_id_ = 0;
   std::string api_hash_;
   std::string database_key_;
@@ -169,7 +170,8 @@ class Worker {
   }
 
   void SendState(tg::AuthState state, const std::string &detail = {}) {
-    Emit(tg::Kind::kState, static_cast<uint32_t>(state), 0, 0, detail);
+    Emit(tg::Kind::kState, static_cast<uint32_t>(state), 0,
+         tg::kFeatureVaultPasswordChange, detail);
   }
 
   void Error(const std::string &message) { Emit(tg::Kind::kError, 0, 0, 0, message); }
@@ -702,7 +704,12 @@ class Worker {
     request->device_model_ = "AERA Recovery";
     request->system_version_ = "Android recovery";
     request->application_version_ = "1.0.0";
-    Send(std::move(request), AuthHandler());
+    Send(std::move(request), [this](Object object) {
+      if (object && object->get_id() == td_api::error::ID) {
+        waiting_parameters_ = true;
+        Error("Could not unlock the Telegram vault.");
+      }
+    });
     std::fill(database_key_.begin(), database_key_.end(), '\0');
     database_key_.clear();
     Emit(tg::Kind::kStatus, 0, 0, 0, "Opening encrypted session");
@@ -888,6 +895,23 @@ class Worker {
              });
         break;
       }
+      case tg::Kind::kChangeVaultPassword:
+        if (!authorized_ || changing_vault_password_ || strlen(message.text) < 8) {
+          Emit(tg::Kind::kVaultPasswordResult, 0, 0, 0,
+               "Could not change the vault password.");
+          break;
+        }
+        changing_vault_password_ = true;
+        Send(td_api::make_object<td_api::setDatabaseEncryptionKey>(message.text),
+             [this](Object object) {
+          changing_vault_password_ = false;
+          const bool ok = object && object->get_id() == td_api::ok::ID;
+          // Never return a TDLib request or supplied secret in an error.
+          Emit(tg::Kind::kVaultPasswordResult, ok ? 1U : 0U, 0, 0,
+               ok ? "Vault password changed." :
+                    "Could not change the vault password.");
+        });
+        break;
       case tg::Kind::kClose: stopping_ = true; break;
       default: break;
     }
@@ -908,6 +932,7 @@ class Worker {
         stopping_ = true; break;
       }
       Handle(message);
+      std::fill(std::begin(message.text), std::end(message.text), '\0');
     }
   }
 

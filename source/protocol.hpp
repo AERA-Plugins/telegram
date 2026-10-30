@@ -9,6 +9,9 @@ namespace aera::telegram {
 constexpr uint32_t kMagic = 0x4154474dU;  // ATGM
 constexpr uint32_t kProtocolVersion = 1;
 constexpr size_t kTextBytes = 2048;
+// Advertised in existing kState.secondary; old hosts safely ignore this field.
+// Extended responses are sent only after a new host explicitly requests them.
+constexpr uint32_t kFeatureVaultPasswordChange = 1U;
 
 enum class Kind : uint32_t {
   // Trusted UI -> isolated TDLib worker.
@@ -29,6 +32,7 @@ enum class Kind : uint32_t {
   kDownloadFile,
   kEditMessage,
   kDeleteMessage,
+  kChangeVaultPassword,
 
   // Isolated worker -> trusted UI.
   kState = 64,
@@ -45,6 +49,7 @@ enum class Kind : uint32_t {
   kAvatarReady,
   kMessageStatus,
   kMessageDeleted,
+  kVaultPasswordResult,
 };
 
 enum class AuthState : uint32_t {
@@ -85,9 +90,9 @@ inline bool Valid(const Message &message, bool from_worker) {
   }
   if (from_worker) {
     return message.kind >= Kind::kState &&
-        message.kind <= Kind::kMessageDeleted;
+        message.kind <= Kind::kVaultPasswordResult;
   }
-  return message.kind >= Kind::kConfigure && message.kind <= Kind::kDeleteMessage;
+  return message.kind >= Kind::kConfigure && message.kind <= Kind::kChangeVaultPassword;
 }
 
 }  // namespace aera::telegram
